@@ -1,0 +1,1 @@
+# ci-cd-training-gitops-config
