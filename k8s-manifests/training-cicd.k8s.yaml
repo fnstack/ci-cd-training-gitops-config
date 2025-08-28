@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: training-cicd
+spec: {}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitea-registry-secret
+  namespace: training-cicd
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJnaXRlYS5hcnBjZS5mbnN0YWNrLmRldiI6eyJ1c2VybmFtZSI6InlvdXItdXNlcm5hbWUiLCJwYXNzd29yZCI6InlvdXItdG9rZW4iLCJlbWFpbCI6InlvdXItZW1haWxAZG9tYWluLmxvY2FsIiwiYXV0aCI6ImVXOTFjaTExYzJWeWJtRnRaVHA1YjNWeUxYUnZhMlZ1In19fQ==
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-api
+  namespace: training-cicd
+spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
+  replicas: 2
+  selector: {}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: dotnet-api
+        cdk8s.io/metadata.addr: training-cicd-dotnet-api-c899adf9
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+          image: gitea.arpce.fnstack.dev/fnstack/dotnet-api
+          imagePullPolicy: Always
+          name: dotnet-api
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          startupProbe:
+            failureThreshold: 3
+            tcpSocket:
+              port: 8080
+      dnsPolicy: ClusterFirst
+      hostNetwork: false
+      imagePullSecrets:
+        - name: gitea-registry-secret
+      restartPolicy: Always
+      securityContext:
+        fsGroupChangePolicy: Always
+        runAsNonRoot: true
+      setHostnameAsFQDN: false
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnet-api-service
+  namespace: training-cicd
+spec:
+  externalIPs: []
+  ports:
+    - nodePort: 30001
+      port: 8080
+  selector:
+    cdk8s.io/metadata.addr: training-cicd-dotnet-api-c899adf9
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: training-cicd
+spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
+  replicas: 2
+  selector: {}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: web-app
+        cdk8s.io/metadata.addr: training-cicd-web-app-c867aa0b
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: NEXT_PUBLIC_API_URL
+              value: http://dotnet-api-service:8080
+          image: gitea.arpce.fnstack.dev/fnstack/web-app
+          imagePullPolicy: Always
+          name: web-app
+          ports:
+            - containerPort: 3000
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          startupProbe:
+            failureThreshold: 3
+            tcpSocket:
+              port: 3000
+      dnsPolicy: ClusterFirst
+      hostNetwork: false
+      imagePullSecrets:
+        - name: gitea-registry-secret
+      restartPolicy: Always
+      securityContext:
+        fsGroupChangePolicy: Always
+        runAsNonRoot: true
+      setHostnameAsFQDN: false
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app-service
+  namespace: training-cicd
+spec:
+  externalIPs: []
+  ports:
+    - nodePort: 30002
+      port: 3000
+  selector:
+    cdk8s.io/metadata.addr: training-cicd-web-app-c867aa0b
+  type: NodePort
