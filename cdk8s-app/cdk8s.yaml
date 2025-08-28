@@ -1,5 +1,5 @@
 language: typescript
 app: bun run main.ts
 imports:
-  - k8s@1.28.0
+  - k8s@1.30.2
 output: ../k8s-manifests/

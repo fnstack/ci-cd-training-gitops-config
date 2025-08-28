@@ -61,8 +61,8 @@ export class WorkshopChart extends Chart {
     // Exposer l'API via Service
     dotnetApi.exposeViaService({
       name: 'dotnet-api-service',
-      ports: [{ port: 8080, nodePort: 30001 }],
-      serviceType: kplus.ServiceType.NODE_PORT
+      ports: [{ port: 8080, targetPort: 8080 }],
+      serviceType: kplus.ServiceType.CLUSTER_IP
     });
 
     // Web App (from Day 2) avec imagePullSecrets
