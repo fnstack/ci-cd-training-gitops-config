@@ -1,0 +1,24 @@
+{
+  "name": "cdk8s-app",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "synth": "cdk8s synth",
+    "import": "cdk8s import",
+    "dev": "bun run build && bun run synth"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.21",
+    "@types/node": "^24.3.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "cdk8s": "^2.70.11",
+    "cdk8s-plus-27": "^2.9.5",
+    "constructs": "^10.4.2"
+  }
+}
